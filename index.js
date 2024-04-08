@@ -1,8 +1,10 @@
 const express = require('express')
 require('dotenv').config();
 const app = express()
+const bodyParser = require('body-parser');   
 const cors = require("cors");
 app.use(cors());
+const bcrypt = require('bcrypt');
 const port = process.env.PORT || 5000
 const { MongoClient, ServerApiVersion } = require('mongodb');
 
@@ -32,7 +34,40 @@ run().catch(console.dir);
 
 const users = client.db("Economy").collection("User")
 
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
+ // Sign-up endpoint
+ app.post('/signup', async (req, res) => {
+  const { username, password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
+  users.insertOne({ username: username, password: hashedPassword }, (err, result) => {
+      if (err) {
+          res.status(500).send('Error signing up');
+      } else {
+          res.status(200).send('Sign-up successful');
+      }
+  });
+});
+
+// Sign-in endpoint
+app.post('/signin', async (req, res) => {
+  const { username, password } = req.body;
+  users.findOne({ username: username }, async (err, user) => {
+      if (err) {
+          res.status(500).send('Error signing in');
+      } else if (!user) {
+          res.status(404).send('User not found');
+      } else {
+          const passwordMatch = await bcrypt.compare(password, user.password);
+          if (passwordMatch) {
+              res.status(200).send('Sign-in successful');
+          } else {
+              res.status(401).send('Incorrect password');
+          }
+      }
+  });
+});
 
 
 

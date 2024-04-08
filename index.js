@@ -33,6 +33,7 @@ async function run() {
 run().catch(console.dir);
 
 const users = client.db("Economy").collection("User")
+const productsCollection = client.db("Economy").collection("Product")
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -67,6 +68,17 @@ app.post('/signin', async (req, res) => {
           }
       }
   });
+});
+
+app.post('/api/v1/products', async (req, res) => {
+  const product = req.body; 
+  try {
+      const result = await productsCollection.insertOne(product);
+      res.status(201).json(result.ops[0]); 
+  } catch (err) {
+      console.error('Error inserting product:', err);
+      res.status(500).send('Error inserting product');
+  }
 });
 
 
